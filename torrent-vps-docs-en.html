@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>qBittorrent VPS — Private Tracker Setup Docs</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #1c2128;
+    --border: #21262d;
+    --border2: #30363d;
+    --green: #3fb950;
+    --green-dim: #3fb95015;
+    --green-mid: #3fb95030;
+    --cyan: #58a6ff;
+    --cyan-dim: #58a6ff10;
+    --yellow: #d29922;
+    --yellow-dim: #d2992215;
+    --red: #f85149;
+    --red-dim: #f8514915;
+    --text: #c9d1d9;
+    --text-dim: #6e7681;
+    --text-bright: #f0f6fc;
+    --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    width: 256px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    z-index: 100;
+  }
+
+  .sidebar::-webkit-scrollbar { width: 3px; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border2); }
+
+  .sidebar-logo {
+    padding: 24px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: var(--green);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .sidebar-logo h1 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-bright);
+  }
+
+  .sidebar-logo p {
+    font-size: 12px;
+    color: var(--text-dim);
+    padding-left: 42px;
+  }
+
+  .nav-section { padding: 12px 12px 4px; }
+
+  .nav-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 8px 8px 4px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.12s;
+  }
+
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+
+  .nav-item.active {
+    background: var(--green-dim);
+    color: var(--green);
+    border: 1px solid var(--green-mid);
+  }
+
+  .nav-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    min-width: 20px;
+  }
+
+  .nav-item.active .nav-num { color: var(--green); }
+
+  .status-bar {
+    position: sticky;
+    bottom: 0;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: blink 2s infinite;
+  }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* Main */
+  .main { margin-left: 256px; }
+
+  /* Hero */
+  .hero {
+    padding: 64px 60px 52px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(160deg, var(--bg) 60%, #161f2e);
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--green-dim);
+    border: 1px solid var(--green-mid);
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: 12px;
+    color: var(--green);
+    margin-bottom: 20px;
+    font-weight: 500;
+  }
+
+  .hero h1 {
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--text-bright);
+    line-height: 1.15;
+    margin-bottom: 14px;
+    letter-spacing: -0.02em;
+  }
+
+  .hero h1 span { color: var(--green); }
+
+  .hero p {
+    font-size: 15px;
+    color: var(--text-dim);
+    max-width: 540px;
+    line-height: 1.8;
+    margin-bottom: 28px;
+  }
+
+  .hero-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .tag {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    padding: 3px 10px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .tag.green { color: var(--green); border-color: var(--green-mid); background: var(--green-dim); }
+  .tag.cyan { color: var(--cyan); border-color: #58a6ff22; background: var(--cyan-dim); }
+  .tag.yellow { color: var(--yellow); border-color: #d2992230; background: var(--yellow-dim); }
+
+  /* Content */
+  .content { padding: 0 60px 80px; }
+
+  .section {
+    padding: 52px 0 44px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section:last-child { border-bottom: none; }
+
+  .section-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .section-num {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--green);
+    background: var(--green-dim);
+    border: 1px solid var(--green-mid);
+    border-radius: 4px;
+    padding: 3px 8px;
+    white-space: nowrap;
+    margin-top: 5px;
+  }
+
+  .section-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-bright);
+    letter-spacing: -0.01em;
+  }
+
+  .section-desc {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  /* Code */
+  .code-block {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 16px 0;
+  }
+
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 14px;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .code-lang {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    font-weight: 500;
+  }
+
+  .code-dots { display: flex; gap: 5px; }
+  .code-dots span { width: 8px; height: 8px; border-radius: 50%; }
+  .code-dots span:nth-child(1) { background: #ff5f57; }
+  .code-dots span:nth-child(2) { background: #febc2e; }
+  .code-dots span:nth-child(3) { background: #28c840; }
+
+  .code-body {
+    padding: 18px 20px;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.8;
+    overflow-x: auto;
+  }
+
+  .code-body pre { white-space: pre; }
+
+  .c-comment { color: #484f58; }
+  .c-cmd { color: var(--green); }
+  .c-flag { color: var(--cyan); }
+  .c-str { color: #a5d6ff; }
+  .c-var { color: #ffa657; }
+  .c-num { color: #79c0ff; }
+
+  /* Alerts */
+  .alert {
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    display: flex;
+    gap: 12px;
+    font-size: 13px;
+    line-height: 1.7;
+    border-left: 3px solid;
+  }
+
+  .alert-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+
+  .alert.success { background: var(--green-dim); border-color: var(--green); color: #adbdab; }
+  .alert.warning { background: var(--yellow-dim); border-color: var(--yellow); color: #c8b87a; }
+  .alert.danger  { background: var(--red-dim);    border-color: var(--red);    color: #c8898a; }
+  .alert.info    { background: var(--cyan-dim);   border-color: var(--cyan);   color: #8ab4c8; }
+
+  /* Steps */
+  .steps { display: flex; flex-direction: column; }
+
+  .step { display: flex; gap: 16px; position: relative; }
+
+  .step::before {
+    content: '';
+    position: absolute;
+    left: 15px; top: 36px; bottom: -8px;
+    width: 1px;
+    background: var(--border);
+  }
+
+  .step:last-child::before { display: none; }
+
+  .step-num {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--green);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .step-content { padding: 4px 0 28px; flex: 1; }
+
+  .step-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-bright);
+    margin-bottom: 6px;
+  }
+
+  .step-desc { font-size: 13px; color: var(--text-dim); line-height: 1.7; margin-bottom: 10px; }
+
+  /* Table */
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    margin: 16px 0;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead { background: var(--bg3); }
+
+  th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.6;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg3); }
+
+  td.mono { font-family: var(--mono); color: var(--cyan); font-size: 12px; }
+  td.green { color: var(--green); }
+  td.yellow { color: var(--yellow); }
+  td.dim { color: var(--text-dim); font-size: 12px; }
+
+  /* Grid */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 16px 0;
+  }
+
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 18px;
+  }
+
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-bright);
+    margin-bottom: 8px;
+  }
+
+  .card-body { font-size: 13px; color: var(--text-dim); line-height: 1.7; }
+
+  /* Inline code */
+  code {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--cyan);
+  }
+
+  /* Trouble */
+  .trouble-item {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin: 10px 0;
+    overflow: hidden;
+  }
+
+  .trouble-q {
+    padding: 12px 16px;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--yellow);
+    font-weight: 500;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .trouble-a {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+
+  a { color: var(--cyan); }
+
+  @media (max-width: 860px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+    .hero { padding: 36px 20px 28px; }
+    .content { padding: 0 20px 60px; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-row">
+      <div class="logo-icon">⚡</div>
+      <h1>qBit VPS Docs</h1>
+    </div>
+    <p>Private Tracker Setup Guide</p>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Getting Started</div>
+    <a class="nav-item active" href="#overview"><span class="nav-num">00</span> Overview</a>
+    <a class="nav-item" href="#requirements"><span class="nav-num">01</span> Requirements</a>
+    <a class="nav-item" href="#install"><span class="nav-num">02</span> Installation</a>
+    <a class="nav-item" href="#aws-sg"><span class="nav-num">03</span> AWS Security Group</a>
+    <a class="nav-item" href="#login"><span class="nav-num">04</span> WebUI Login</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Configuration</div>
+    <a class="nav-item" href="#private-tracker"><span class="nav-num">05</span> Private Tracker</a>
+    <a class="nav-item" href="#port-config"><span class="nav-num">06</span> Port Configuration</a>
+    <a class="nav-item" href="#file-browser"><span class="nav-num">07</span> Nginx File Browser</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Reference</div>
+    <a class="nav-item" href="#ports-table"><span class="nav-num">08</span> Ports Reference</a>
+    <a class="nav-item" href="#commands"><span class="nav-num">09</span> Helper Commands</a>
+    <a class="nav-item" href="#troubleshoot"><span class="nav-num">10</span> Troubleshooting</a>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-dot"></div>
+    Production Ready
+  </div>
+</nav>
+
+<main class="main">
+
+  <div class="hero" id="overview">
+    <div class="hero-badge">⚡ Private Tracker Client — VPS Setup</div>
+    <h1>qBittorrent <span>VPS</span><br>Setup Guide</h1>
+    <p>Complete guide to setting up qBittorrent-nox on a VPS for private trackers such as AvisaZ, TorrentLeech, PTP, and others. Covers installation, AWS Security Group configuration, Nginx file browser, and troubleshooting.</p>
+    <div class="hero-tags">
+      <span class="tag green">✓ Private Tracker Ready</span>
+      <span class="tag green">✓ DHT/PeX/LSD Disabled</span>
+      <span class="tag cyan">AWS EC2</span>
+      <span class="tag cyan">Ubuntu 22.04 / 24.04</span>
+      <span class="tag yellow">qBittorrent-nox</span>
+      <span class="tag yellow">Nginx File Browser</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- Requirements -->
+    <div class="section" id="requirements">
+      <div class="section-header">
+        <div class="section-num">01</div>
+        <div>
+          <div class="section-title">Requirements</div>
+          <div class="section-desc">What you need before starting the setup.</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">🖥️ VPS / Server</div>
+          <div class="card-body">Ubuntu 22.04 or 24.04 (Debian-based)<br>Minimum 1 vCPU, 1 GB RAM<br>Storage as needed for downloads<br>Root or sudo access</div>
+        </div>
+        <div class="card">
+          <div class="card-title">☁️ AWS Specific</div>
+          <div class="card-body">Active EC2 instance<br>Access to Security Group (Inbound Rules)<br>Key pair (.pem) for SSH access<br>Elastic IP recommended</div>
+        </div>
+        <div class="card">
+          <div class="card-title">🔑 Private Tracker</div>
+          <div class="card-body">Active account on the tracker (AvisaZ, etc.)<br>Download via .torrent file or magnet link<br>Passkey registered on the tracker<br>Ratio requirements understood</div>
+        </div>
+        <div class="card">
+          <div class="card-title">🛠️ Local Tools</div>
+          <div class="card-body">SSH client (Terminal / PuTTY)<br>Modern web browser<br>FileZilla / WinSCP (optional, for SFTP)</div>
+        </div>
+      </div>
+
+      <div class="alert warning">
+        <span class="alert-icon">⚠️</span>
+        <div>AWS EC2 has a <strong>Security Group</strong> acting as a second firewall layer on top of UFW. Every new port opened in UFW <strong>must also be opened</strong> in the Security Group, otherwise it remains inaccessible from outside.</div>
+      </div>
+    </div>
+
+    <!-- Install -->
+    <div class="section" id="install">
+      <div class="section-header">
+        <div class="section-num">02</div>
+        <div>
+          <div class="section-title">Installation</div>
+          <div class="section-desc">Run the automated installer script on your VPS as root.</div>
+        </div>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <div class="step-title">Upload and run the script</div>
+            <div class="step-desc">Upload <code>setup-torrent-vps.sh</code> to the VPS, then run it with your configuration variables.</div>
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">bash</span><div class="code-dots"><span></span><span></span><span></span></div></div>
+              <div class="code-body"><pre><span class="c-comment"># Upload to VPS via SCP</span>
+scp -i key.pem setup-torrent-vps.sh ubuntu@SERVER_IP:~
+
+<span class="c-comment"># SSH into the VPS</span>
+ssh -i key.pem ubuntu@SERVER_IP
+
+<span class="c-comment"># Run the script with custom config</span>
+<span class="c-var">QB_PASS</span>=<span class="c-str">"StrongPassword123!"</span> sudo bash setup-torrent-vps.sh</pre></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <div class="step-title">What the script does automatically</div>
+            <div class="step-desc">The installation process takes ~2–5 minutes depending on VPS speed.</div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Component</th><th>Action</th><th>Details</th></tr></thead>
+                <tbody>
+                  <tr><td>qBittorrent-nox</td><td class="green">Install</td><td class="dim">From official PPA, latest version</td></tr>
+                  <tr><td>User qbuser</td><td class="green">Create</td><td class="dim">Dedicated user for security isolation</td></tr>
+                  <tr><td>/opt/downloads</td><td class="green">Create</td><td class="dim">Main download directory</td></tr>
+                  <tr><td>systemd service</td><td class="green">Enable</td><td class="dim">Auto-start on reboot</td></tr>
+                  <tr><td>UFW Firewall</td><td class="green">Configure</td><td class="dim">Allow SSH, 8080, 6881</td></tr>
+                  <tr><td>Fail2ban</td><td class="green">Configure</td><td class="dim">Brute-force protection for WebUI</td></tr>
+                  <tr><td>DHT / PeX / LSD</td><td class="yellow">Disabled</td><td class="dim">Required by private trackers</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <div class="step-title">Verify the service is running</div>
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">bash</span><div class="code-dots"><span></span><span></span><span></span></div></div>
+              <div class="code-body"><pre><span class="c-comment"># Check service status</span>
+sudo systemctl status qbittorrent-nox
+
+<span class="c-comment"># Check listening ports</span>
+ss -tlnp | grep qbit
+
+<span class="c-comment"># View logs + temporary password</span>
+sudo journalctl -u qbittorrent-nox --no-pager -n 20</pre></div>
+            </div>
+            <div class="alert info">
+              <span class="alert-icon">💡</span>
+              <div>On qBittorrent v5.x, if the password has not been set, the service generates a <strong>temporary password</strong> visible in the logs. Look for: <code>A temporary password is provided for this session: XXXXXXXX</code></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AWS Security Group -->
+    <div class="section" id="aws-sg">
+      <div class="section-header">
+        <div class="section-num">03</div>
+        <div>
+          <div class="section-title">AWS Security Group</div>
+          <div class="section-desc">Open the required ports in AWS — this must be done for every new port.</div>
+        </div>
+      </div>
+
+      <div class="alert danger">
+        <span class="alert-icon">🚨</span>
+        <div>AWS Security Group is a firewall at the cloud level, <strong>separate from UFW</strong>. A port already opened in UFW but not in the Security Group will still result in <strong>ERR_CONNECTION_TIMED_OUT</strong>.</div>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <div class="step-title">Navigate to the Security Group</div>
+            <div class="step-desc">AWS Console → EC2 → Instances → click your instance → <strong>Security</strong> tab → click the Security Group name → <strong>Edit inbound rules</strong></div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <div class="step-title">Add all required ports</div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Type</th><th>Protocol</th><th>Port</th><th>Source</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>Custom TCP</td><td class="mono">TCP</td><td class="mono">8080</td><td class="mono">0.0.0.0/0</td><td class="dim">qBittorrent WebUI</td></tr>
+                  <tr><td>Custom TCP</td><td class="mono">TCP</td><td class="mono">[PEER_PORT]</td><td class="mono">0.0.0.0/0</td><td class="dim">Peer connection (check Options → Connection)</td></tr>
+                  <tr><td>Custom UDP</td><td class="mono">UDP</td><td class="mono">[PEER_PORT]</td><td class="mono">0.0.0.0/0</td><td class="dim">Peer connection UDP</td></tr>
+                  <tr><td>Custom TCP</td><td class="mono">TCP</td><td class="mono">8081</td><td class="mono">0.0.0.0/0</td><td class="dim">Nginx file browser (optional)</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="alert warning">
+              <span class="alert-icon">⚠️</span>
+              <div>The peer connection port defaults to <code>6881</code>, but may change if qBittorrent is set to use a random port. Always check the actual port at: <strong>Tools → Options → Connection → "Port used for incoming connections"</strong></div>
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <div class="step-title">Click Save rules</div>
+            <div class="step-desc">Click the orange <strong>Save rules</strong> button at the bottom right. Changes take effect immediately without restarting the instance.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Login -->
+    <div class="section" id="login">
+      <div class="section-header">
+        <div class="section-num">04</div>
+        <div>
+          <div class="section-title">WebUI Login</div>
+          <div class="section-desc">Access the qBittorrent web interface.</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">URL</span><div class="code-dots"><span></span><span></span><span></span></div></div>
+        <div class="code-body"><pre>http://<span class="c-var">SERVER_IP</span>:8080
+
+<span class="c-comment">Default credentials:</span>
+Username : <span class="c-str">admin</span>
+Password : <span class="c-str">adminadmin</span>  <span class="c-comment"># or check the temporary password in the logs</span></pre></div>
+      </div>
+
+      <div class="alert warning">
+        <span class="alert-icon">⚠️</span>
+        <div>If login with <code>adminadmin</code> fails, retrieve the temporary password from the logs:<br>
+        <code>sudo journalctl -u qbittorrent-nox --no-pager -n 20</code><br>
+        Look for: <em>"A temporary password is provided for this session: XXXXXXXX"</em></div>
+      </div>
+
+      <div class="alert danger">
+        <span class="alert-icon">🔒</span>
+        <div>Change the password immediately after first login. Go to <strong>Tools → Options → Web UI → Password</strong>. The temporary password changes every time the service restarts.</div>
+      </div>
+    </div>
+
+    <!-- Private Tracker -->
+    <div class="section" id="private-tracker">
+      <div class="section-header">
+        <div class="section-num">05</div>
+        <div>
+          <div class="section-title">Private Tracker Setup</div>
+          <div class="section-desc">Optimal configuration for private trackers such as AvisaZ, TorrentLeech, PTP, and others.</div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Setting</th><th>Location</th><th>Value</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td>DHT</td><td class="dim">Options → BitTorrent</td><td class="yellow">❌ Disabled</td><td class="dim">Private trackers do not allow DHT</td></tr>
+            <tr><td>Peer Exchange (PeX)</td><td class="dim">Options → BitTorrent</td><td class="yellow">❌ Disabled</td><td class="dim">Bypasses tracker — results in a ban</td></tr>
+            <tr><td>Local Service Discovery</td><td class="dim">Options → BitTorrent</td><td class="yellow">❌ Disabled</td><td class="dim">Not applicable on a VPS</td></tr>
+            <tr><td>Global Max Ratio</td><td class="dim">Options → BitTorrent</td><td class="green">2.0</td><td class="dim">Seed at least 2× to maintain ratio</td></tr>
+            <tr><td>UPnP / NAT-PMP</td><td class="dim">Options → Connection</td><td class="yellow">❌ Disabled</td><td class="dim">Not useful on a VPS</td></tr>
+            <tr><td>Anonymous Mode</td><td class="dim">Options → BitTorrent</td><td class="yellow">❌ Disabled</td><td class="dim">Private trackers require client identity</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="alert success">
+        <span class="alert-icon">✅</span>
+        <div>The installer script automatically applies all settings above via the config file. Manual verification is still recommended after the first login.</div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">Tips — AvisaZ</span><div class="code-dots"><span></span><span></span><span></span></div></div>
+        <div class="code-body"><pre><span class="c-comment"># If a torrent is stuck / not announcing:</span>
+<span class="c-comment"># Right-click the torrent → Force Reannounce</span>
+
+<span class="c-comment"># Confirm tracker status = "Working" in the Trackers tab</span>
+<span class="c-comment"># "Connection refused"   → check peer port in Security Group</span>
+<span class="c-comment"># "Unregistered torrent" → torrent has been removed from the tracker</span></pre></div>
+      </div>
+    </div>
+
+    <!-- Port Config -->
+    <div class="section" id="port-config">
+      <div class="section-header">
+        <div class="section-num">06</div>
+        <div>
+          <div class="section-title">Port Configuration</div>
+          <div class="section-desc">How to diagnose and fix port issues — the most common cause of stalled torrents.</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">bash — Port Diagnostics</span><div class="code-dots"><span></span><span></span><span></span></div></div>
+        <div class="code-body"><pre><span class="c-comment"># Check all ports qBittorrent is listening on</span>
+ss -tlnp | grep qbit
+ss -ulnp | grep qbit
+
+<span class="c-comment"># Check UFW status</span>
+sudo ufw status numbered
+
+<span class="c-comment"># Open the peer port (replace 12021 with the actual port)</span>
+sudo ufw allow <span class="c-num">12021</span>/tcp
+sudo ufw allow <span class="c-num">12021</span>/udp
+sudo ufw reload
+
+<span class="c-comment"># Verify the port is open from outside:</span>
+<span class="c-comment"># https://www.yougetsignal.com/tools/open-ports/</span></pre></div>
+      </div>
+
+      <div class="alert info">
+        <span class="alert-icon">💡</span>
+        <div>The peer connection port can be random. Always check the actual port via <code>ss -tlnp | grep qbit</code> and make sure it is open in <strong>both UFW and the AWS Security Group</strong>. Both must be configured.</div>
+      </div>
+    </div>
+
+    <!-- Nginx File Browser -->
+    <div class="section" id="file-browser">
+      <div class="section-header">
+        <div class="section-num">07</div>
+        <div>
+          <div class="section-title">Nginx File Browser</div>
+          <div class="section-desc">Browse and download completed files directly from your browser — no SFTP needed.</div>
+        </div>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <div class="step-title">Install and configure Nginx</div>
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">bash</span><div class="code-dots"><span></span><span></span><span></span></div></div>
+              <div class="code-body"><pre>sudo apt install nginx -y
+
+sudo tee /etc/nginx/sites-available/filebrowser << <span class="c-str">'EOF'</span>
+server {
+    listen 8081;
+    root /opt/downloads;
+    autoindex on;
+    autoindex_exact_size off;
+    autoindex_localtime on;
+}
+<span class="c-str">EOF</span>
+
+<span class="c-comment"># Enable config and remove default</span>
+sudo ln -s /etc/nginx/sites-available/filebrowser /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo nginx -t && sudo systemctl reload nginx
+
+<span class="c-comment"># Fix permissions and open firewall</span>
+sudo chmod -R <span class="c-num">755</span> /opt/downloads
+sudo ufw allow <span class="c-num">8081</span>/tcp</pre></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <div class="step-title">Open port 8081 in AWS Security Group</div>
+            <div class="step-desc">Add rule: Custom TCP → Port <strong>8081</strong> → Source <code>0.0.0.0/0</code> → Save rules.</div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <div class="step-title">Access the file browser</div>
+            <div class="code-block">
+              <div class="code-header"><span class="code-lang">URL</span><div class="code-dots"><span></span><span></span><span></span></div></div>
+              <div class="code-body"><pre>http://<span class="c-var">SERVER_IP</span>:8081</pre></div>
+            </div>
+            <div class="alert warning">
+              <span class="alert-icon">⚠️</span>
+              <div>Make sure the <strong>Default Save Path</strong> in qBittorrent points to <code>/opt/downloads</code>. Check at <strong>Options → Downloads → Default Save Path</strong>. If it differs, update the Nginx <code>root</code> directive in the config file accordingly and reload Nginx.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ports Reference -->
+    <div class="section" id="ports-table">
+      <div class="section-header">
+        <div class="section-num">08</div>
+        <div>
+          <div class="section-title">Ports Reference</div>
+          <div class="section-desc">All ports that need to be opened in both UFW and AWS Security Group.</div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Port</th><th>Protocol</th><th>Service</th><th>UFW</th><th>AWS SG</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">22</td><td class="mono">TCP</td><td>SSH</td><td class="green">✓ Allow</td><td class="green">✓ Allow</td><td class="dim">Remote server access</td></tr>
+            <tr><td class="mono">8080</td><td class="mono">TCP</td><td>qBittorrent WebUI</td><td class="green">✓ Allow</td><td class="green">✓ Allow</td><td class="dim">Web interface</td></tr>
+            <tr><td class="mono">[PEER]</td><td class="mono">TCP+UDP</td><td>Peer Connection</td><td class="green">✓ Allow</td><td class="green">✓ Allow</td><td class="dim">Check Options → Connection</td></tr>
+            <tr><td class="mono">8081</td><td class="mono">TCP</td><td>Nginx File Browser</td><td class="green">✓ Allow</td><td class="green">✓ Allow</td><td class="dim">Browse files via browser</td></tr>
+            <tr><td class="mono">80/443</td><td class="mono">TCP</td><td>HTTP / HTTPS</td><td class="yellow">Optional</td><td class="yellow">Optional</td><td class="dim">Only if using a domain + SSL</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Helper Commands -->
+    <div class="section" id="commands">
+      <div class="section-header">
+        <div class="section-num">09</div>
+        <div>
+          <div class="section-title">Helper Commands</div>
+          <div class="section-desc">Shortcut commands installed automatically by the setup script.</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-lang">bash</span><div class="code-dots"><span></span><span></span><span></span></div></div>
+        <div class="code-body"><pre><span class="c-comment"># Check qBittorrent status</span>
+<span class="c-cmd">qb-status</span>
+
+<span class="c-comment"># Follow live logs</span>
+<span class="c-cmd">qb-log</span>
+
+<span class="c-comment"># Restart the service</span>
+<span class="c-cmd">qb-restart</span>
+
+<span class="c-comment"># Manual systemctl commands</span>
+sudo systemctl <span class="c-flag">start</span>   qbittorrent-nox
+sudo systemctl <span class="c-flag">stop</span>    qbittorrent-nox
+sudo systemctl <span class="c-flag">restart</span> qbittorrent-nox
+sudo systemctl <span class="c-flag">status</span>  qbittorrent-nox
+
+<span class="c-comment"># Full logs</span>
+sudo journalctl -u qbittorrent-nox -f
+sudo journalctl -u qbittorrent-nox --no-pager -n 50</pre></div>
+      </div>
+    </div>
+
+    <!-- Troubleshooting -->
+    <div class="section" id="troubleshoot">
+      <div class="section-header">
+        <div class="section-num">10</div>
+        <div>
+          <div class="section-title">Troubleshooting</div>
+          <div class="section-desc">Common issues and solutions encountered during this setup.</div>
+        </div>
+      </div>
+
+      <div class="trouble-item">
+        <div class="trouble-q">❓ ERR_CONNECTION_TIMED_OUT when opening WebUI</div>
+        <div class="trouble-a">The port is not open in the <strong>AWS Security Group</strong>. Go to EC2 → Security Groups → Edit inbound rules → add port 8080 TCP → Save rules. UFW alone is not sufficient on AWS.</div>
+      </div>
+
+      <div class="trouble-item">
+        <div class="trouble-q">❓ Invalid Username or Password on login</div>
+        <div class="trouble-a">
+          qBittorrent 5.x generates a temporary password per session. Check the logs:<br>
+          <code>sudo journalctl -u qbittorrent-nox --no-pager -n 20</code><br>
+          Find the line: <em>"A temporary password is provided for this session: XXXXXXXX"</em>. Use that password and immediately set a permanent one at Options → Web UI.
+        </div>
+      </div>
+
+      <div class="trouble-item">
+        <div class="trouble-q">❓ Torrent Stalled — Down Speed 0 B/s even though tracker is Working</div>
+        <div class="trouble-a">
+          The peer connection port is not open. Steps to fix:<br>
+          1. Check actual port: <code>ss -tlnp | grep qbit</code><br>
+          2. Open port in UFW: <code>sudo ufw allow PORT/tcp && sudo ufw allow PORT/udp</code><br>
+          3. Open the <strong>same port</strong> in AWS Security Group (both TCP and UDP)<br>
+          4. Verify via <a href="https://www.yougetsignal.com/tools/open-ports/" target="_blank">yougetsignal.com</a>
+        </div>
+      </div>
+
+      <div class="trouble-item">
+        <div class="trouble-q">❓ Nginx File Browser is empty / files not showing</div>
+        <div class="trouble-a">The qBittorrent default save path is not <code>/opt/downloads</code>. Check at <strong>Options → Downloads → Default Save Path</strong>. If different, update the <code>root</code> directive in <code>/etc/nginx/sites-available/filebrowser</code> to match, then run <code>sudo systemctl reload nginx</code>.</div>
+      </div>
+
+      <div class="trouble-item">
+        <div class="trouble-q">❓ Port shows open on yougetsignal but browser still times out</div>
+        <div class="trouble-a">
+          Likely a browser cache issue. Try:<br>
+          1. Incognito / private mode<br>
+          2. A different browser<br>
+          3. Hard refresh: <code>Ctrl+Shift+R</code>
+        </div>
+      </div>
+
+      <div class="trouble-item">
+        <div class="trouble-q">❓ qBittorrent does not start after a reboot</div>
+        <div class="trouble-a">
+          Make sure the service is enabled: <code>sudo systemctl enable qbittorrent-nox</code><br>
+          Check errors: <code>sudo journalctl -u qbittorrent-nox -n 50</code>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</main>
+
+<script>
+  const navItems = document.querySelectorAll('.nav-item');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        navItems.forEach(item => {
+          item.classList.remove('active');
+          if (item.getAttribute('href') === '#' + id) item.classList.add('active');
+        });
+      }
+    });
+  }, { threshold: 0.3, rootMargin: '-80px 0px -60% 0px' });
+
+  document.querySelectorAll('[id]').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
