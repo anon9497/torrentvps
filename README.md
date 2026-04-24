@@ -1,1 +1,1 @@
-https://anon9497.github.io/qbittorrent-vps-setup/torrent-vps-docs-en.html
+https://anon9497.github.io/anon9497/torrentvps/blob/main/torrent-vps-docs-en.html
